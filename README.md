@@ -37,7 +37,20 @@
 
 ## 安装方法
 
-### 方法一：Git 一键安装（推荐）
+### 方法一：复制提示词让 Agent 自动安装（最省心）
+
+无需手动敲击终端命令，直接将下方预设提示词复制发送给 **Antigravity 对话框**，Agent 会自动为你克隆并配置就绪：
+
+```text
+请帮我安装 `agy-orbit` 插件：
+1. 检查并确保本地插件目录存在（macOS/Linux 为 `~/.gemini/config/plugins/`，Windows 为 `$HOME\.gemini\config\plugins\`）；
+2. 运行命令将仓库 `https://github.com/luluxiaoyu/agy-orbit.git` 克隆到该目录下的 `agy-orbit` 文件夹中（若已存在则执行 git pull 更新）；
+3. 检查确认目录结构完整（包含 `plugin.json` 与 `sidecars/monitor/server.mjs`），并提醒我在 Antigravity 插件管理中确认启用。
+```
+
+---
+
+### 方法二：Git 终端一键安装
 
 打开终端，直接将仓库克隆至 Antigravity 插件目录即可：
 
@@ -53,7 +66,7 @@ git clone https://github.com/luluxiaoyu/agy-orbit.git "$HOME\.gemini\config\plug
 
 ---
 
-### 方法二：手动安装
+### 方法三：手动下载安装
 
 1. 点击本仓库右上角 **Code -> Download ZIP** 下载源码包并解压；
 2. 将解压后的文件夹重命名为 `agy-orbit`；

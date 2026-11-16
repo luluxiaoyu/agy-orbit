@@ -39,7 +39,20 @@ A seamless bottom-bar telemetry plugin designed specifically for **Google Antigr
 
 ## Installation
 
-### Method 1: Git One-Line Clone (Recommended)
+### Method 1: Ask Your Agent to Install (Zero Effort)
+
+No need to open a terminal. Simply copy and send the following prompt directly into your **Antigravity chat**, and the agent will install and configure it for you:
+
+```text
+Please help me install the `agy-orbit` plugin:
+1. Ensure the local plugin directory exists (`~/.gemini/config/plugins/` on macOS/Linux, or `$HOME\.gemini\config\plugins\` on Windows);
+2. Clone `https://github.com/luluxiaoyu/agy-orbit.git` into the `agy-orbit` folder inside that directory (or run `git pull` if it already exists);
+3. Verify that the files (`plugin.json` and `sidecars/monitor/server.mjs`) are present, and remind me to confirm it is enabled in Antigravity Plugins settings.
+```
+
+---
+
+### Method 2: Git Terminal One-Liner
 
 Run the command in your terminal:
 
@@ -55,7 +68,7 @@ git clone https://github.com/luluxiaoyu/agy-orbit.git "$HOME\.gemini\config\plug
 
 ---
 
-### Method 2: Manual Installation
+### Method 3: Manual Installation
 
 1. Click **Code -> Download ZIP** on GitHub and extract the archive;
 2. Rename the extracted folder to `agy-orbit`;
