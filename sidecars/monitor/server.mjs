@@ -1,6 +1,7 @@
-import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { join, basename } from 'node:path';
 import { homedir } from 'node:os';
+import { DatabaseSync } from 'node:sqlite';
 
 const INTERVAL_MS = 1000;
 const PORT_FILE =
@@ -9,6 +10,8 @@ const PORT_FILE =
     : process.platform === 'win32'
       ? join(process.env.APPDATA || join(homedir(), 'AppData', 'Roaming'), 'Antigravity', 'DevToolsActivePort')
       : join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'Antigravity', 'DevToolsActivePort');
+
+const CONV_DIR = join(homedir(), '.gemini', 'antigravity', 'conversations');
 
 const sockets = new Map();
 let cachedQuota = null;
@@ -69,6 +72,90 @@ function formatCountdown(targetIso) {
     return `${hours}小时${mins}分后重置`;
   }
   return `${mins}分钟后重置`;
+}
+
+function parsePbMap(buf) {
+  const fields = new Map();
+  let pos = 0;
+  while (pos < buf.length) {
+    const key = buf[pos++];
+    const wireType = key & 7;
+    const fieldNum = key >> 3;
+    if (wireType === 0) {
+      let val = 0, shift = 0;
+      while (pos < buf.length) {
+        const b = buf[pos++];
+        val |= (b & 0x7f) << shift;
+        if ((b & 0x80) === 0) break;
+        shift += 7;
+      }
+      if (!fields.has(fieldNum)) fields.set(fieldNum, []);
+      fields.get(fieldNum).push(val);
+    } else if (wireType === 2) {
+      let len = 0, shift = 0;
+      while (pos < buf.length) {
+        const b = buf[pos++];
+        len |= (b & 0x7f) << shift;
+        if ((b & 0x80) === 0) break;
+        shift += 7;
+      }
+      const val = buf.subarray(pos, pos + len);
+      pos += len;
+      if (!fields.has(fieldNum)) fields.set(fieldNum, []);
+      fields.get(fieldNum).push(val);
+    } else {
+      break;
+    }
+  }
+  return fields;
+}
+
+// Dynamically extracts the accurate session context limit configured by Antigravity
+// (e.g. 256k for Gemini in Antigravity, 160k for Claude, etc.)
+function resolveMaxContextTokens(convId) {
+  if (!convId) return 256000;
+  const dbFile = join(CONV_DIR, `${convId}.db`);
+  if (!existsSync(dbFile)) return 256000;
+  try {
+    const db = new DatabaseSync(dbFile, { readOnly: true });
+    const rows = db.prepare('SELECT data FROM gen_metadata ORDER BY idx DESC LIMIT 5').all();
+    db.close();
+    for (const row of rows) {
+      if (!row?.data) continue;
+      const top = parsePbMap(Buffer.from(row.data));
+      if (!top.has(1)) continue;
+      const m1 = parsePbMap(top.get(1)[0]);
+      if (m1.has(9)) {
+        const m9 = parsePbMap(m1.get(9)[0]);
+        if (m9.has(10)) {
+          const m10 = parsePbMap(m9.get(10)[0]);
+          if (m10.has(4)) {
+            const val = m10.get(4)[0];
+            if (val > 0) return val;
+          }
+        }
+      }
+    }
+  } catch (err) {}
+  return 256000;
+}
+
+function resolveActiveConvId(pathnameConvId) {
+  if (pathnameConvId && existsSync(join(CONV_DIR, `${pathnameConvId}.db`))) {
+    return pathnameConvId;
+  }
+  if (!existsSync(CONV_DIR)) return pathnameConvId || '';
+  try {
+    const files = readdirSync(CONV_DIR)
+      .filter((f) => f.endsWith('.db'))
+      .map((f) => ({
+        id: basename(f, '.db'),
+        mtimeMs: statSync(join(CONV_DIR, f)).mtimeMs,
+      }))
+      .sort((a, b) => b.mtimeMs - a.mtimeMs);
+    if (files.length > 0) return files[0].id;
+  } catch {}
+  return pathnameConvId || '';
 }
 
 async function connect(target) {
@@ -176,7 +263,9 @@ async function computeMetrics(convId) {
 
     const ctx = (latest.input_tokens || 0) + (latest.cache_read_tokens || 0);
     const cached = latest.cache_read_tokens || 0;
-    const maxCtx = 1048576;
+
+    // Dynamically retrieve Antigravity's true context limit (e.g. 256k for Gemini in Antigravity)
+    const maxCtx = resolveMaxContextTokens(convId);
     const quotaPercent = Math.min((ctx / maxCtx) * 100, 100);
 
     // Breakdown scaled into actual window fractions
@@ -276,13 +365,13 @@ function pageMount(data) {
 
   let wrapper = document.getElementById('token-monitor-wrapper');
 
-  // BUILD STRUCTURE STRICTLY ONCE (v10)
-  if (!wrapper || wrapper.getAttribute('data-tm-ver') !== '10') {
+  // BUILD STRUCTURE STRICTLY ONCE (v11)
+  if (!wrapper || wrapper.getAttribute('data-tm-ver') !== '11') {
     if (wrapper) wrapper.remove();
 
     wrapper = document.createElement('div');
     wrapper.id = 'token-monitor-wrapper';
-    wrapper.setAttribute('data-tm-ver', '10');
+    wrapper.setAttribute('data-tm-ver', '11');
     wrapper.style.cssText = [
       'position: relative !important',
       'display: inline-flex !important',
@@ -351,10 +440,10 @@ function pageMount(data) {
         <!-- 1. Context Usage Watermark -->
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
           <span style="color: var(--muted-foreground, #71717a);">上下文总水位</span>
-          <span id="tm-pop-ctx" style="font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: var(--foreground, #0a0a0c);">0.0k / 1049k</span>
+          <span id="tm-pop-ctx" style="font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: var(--foreground, #0a0a0c);">0.0k / 256k</span>
         </div>
 
-        <!-- Segmented Context Bar (Proportional to 1M window track) -->
+        <!-- Segmented Context Bar (Proportional to True Antigravity Context Window) -->
         <div style="display: flex; height: 6px; border-radius: 9999px; overflow: hidden; background: var(--border, rgba(128,128,128,0.18)); margin-bottom: 8px;">
           <div id="tm-seg-turn0" style="width: 0%; background: #eab308; transition: width 0.3s ease;" title="初始系统预设"></div>
           <div id="tm-seg-read" style="width: 0%; background: #3b82f6; transition: width 0.3s ease;" title="文件读取与工具"></div>
@@ -457,8 +546,8 @@ function pageMount(data) {
       e.stopPropagation();
     });
 
-    if (!window.__tokenMonitorClickOutsideV10) {
-      window.__tokenMonitorClickOutsideV10 = true;
+    if (!window.__tokenMonitorClickOutsideV11) {
+      window.__tokenMonitorClickOutsideV11 = true;
       document.addEventListener('click', (e) => {
         const wrap = document.getElementById('token-monitor-wrapper');
         if (wrap && !wrap.contains(e.target)) {
@@ -505,7 +594,7 @@ function pageMount(data) {
   const popCtx = document.getElementById('tm-pop-ctx');
   if (popCtx) popCtx.textContent = `${data.totalInputK}k / ${data.maxCtxK}k`;
 
-  // 4 Segments: proportional to the TOTAL maxContextTokens (1,048k window)!
+  // 4 Segments: proportional to Antigravity's true context limit!
   const b = data.breakdown || {};
   const segT0 = document.getElementById('tm-seg-turn0');
   const segRd = document.getElementById('tm-seg-read');
@@ -568,7 +657,7 @@ function pageMount(data) {
   const popSpeed = document.getElementById('tm-pop-speed');
   if (popSpeed) popSpeed.textContent = `~${data.speed} t/s`;
 
-  return 'mounted v10';
+  return 'mounted v11';
 }
 
 async function tick() {
@@ -594,7 +683,7 @@ async function tick() {
       const entry = sockets.get(t.id) || (await connect(t));
       const pathname = (await evaluate(entry, 'location.pathname')) || '';
       const match = pathname.match(/\/c\/([0-9a-f-]{36})/);
-      const convId = match ? match[1] : '';
+      const convId = resolveActiveConvId(match ? match[1] : '');
       const metrics = await computeMetrics(convId);
       if (metrics) {
         await evaluate(entry, `(${pageMount.toString()})(${JSON.stringify(metrics)})`);
@@ -606,4 +695,4 @@ async function tick() {
 }
 
 setInterval(tick, INTERVAL_MS);
-console.log('[token-monitor] background daemon running v10 with robust token parsing, quota bars, and proper technical terminology...');
+console.log('[token-monitor] background daemon running v11 with dynamic context limit resolution (256k/160k), quota bars, and proper technical terminology...');

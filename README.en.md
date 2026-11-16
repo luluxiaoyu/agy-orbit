@@ -2,7 +2,7 @@
 
 [中文文档](./README.md) | **English**
 
-A seamless bottom-bar telemetry plugin designed specifically for **Google Antigravity**. Monitor 1M context usage, 4-stage token breakdown, prompt cache validity countdown, and official account quota limits in real time.
+A seamless bottom-bar telemetry plugin designed specifically for **Google Antigravity**. Monitor real-time conversation context usage, 4-stage token breakdown, prompt cache validity countdown, and official account quota limits.
 
 <p align="center">
   <img src="assets/preview-footer.png" width="90%" alt="Antigravity composer footer inline progress ring" />
@@ -16,14 +16,14 @@ A seamless bottom-bar telemetry plugin designed specifically for **Google Antigr
 
 ## Highlights
 
-- **Inline Composer Footer Ring**: Mounts seamlessly to the left of the `Auto` button in the composer footer. Displays 1M context percentage with dynamic status colors (green safe, amber warning, red critical).
+- **Inline Composer Footer Ring**: Mounts seamlessly to the left of the `Auto` button in the composer footer. Displays context percentage with dynamic status colors (green safe, amber warning, red critical).
 - **Click to Toggle / Outside to Close**: Clicking the ring opens/closes the telemetry dashboard. Hover only provides subtle button feedback to prevent accidental popups; clicking outside automatically closes it.
-- **1,048k Context Window Proportional Bar**: The progress bar track accurately represents the full 1M (1,048,576 tokens) context window. Segments are proportionally stacked to indicate used capacity, while the remaining portion represents available headroom:
+- **Adaptive Context Window Limit**: While underlying models may theoretically support 1M+ tokens, Antigravity assigns practical safe session limits (e.g. **256k** for Gemini, **160k** for Claude). Orbit dynamically reads the exact limit from Antigravity's native metadata and scales the progress bar proportionally:
   - **Preset (System/Init)**: Amber segment
   - **Read (Tools/Files)**: Blue segment
   - **Think (Chain of Thought)**: Green segment
   - **Output (Responses)**: Orange segment
-- **2×2 Clean Legend Grid**: Structured dual-column grid prevents Chinese/English character wrapping, using monospace font for token metrics.
+- **2×2 Clean Legend Grid**: Structured dual-column grid prevents character wrapping, using monospace font for token metrics.
 - **Prompt Cache Status Tracker**: Tracks cache hit rate (%) and cached vs new tokens. Accurately counts elapsed time since the previous model turn:
   - `< 180s`: `Valid · X s since last turn` (Green)
   - `180s ~ 240s`: `Expiring · X s remaining` (Amber warning to reuse warm cache)
