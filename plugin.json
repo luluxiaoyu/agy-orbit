@@ -1,0 +1,22 @@
+{
+  "name": "agy-orbit",
+  "displayName": "Orbit · 上下文与配额遥测",
+  "description": "专为 Google Antigravity 打造的底栏无感遥测底座，实时掌控 1M 上下文水位、缓存状态与官方账户配额",
+  "version": "1.0.0",
+  "author": {
+    "name": "luluxiaoyu",
+    "url": "https://github.com/luluxiaoyu"
+  },
+  "homepage": "https://github.com/luluxiaoyu/agy-orbit",
+  "repository": "https://github.com/luluxiaoyu/agy-orbit.git",
+  "keywords": [
+    "antigravity",
+    "token",
+    "telemetry",
+    "metrics",
+    "context-window",
+    "quota",
+    "cache-rate",
+    "speed"
+  ]
+}

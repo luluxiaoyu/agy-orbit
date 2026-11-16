@@ -1,0 +1,6 @@
+{
+  "name": "agy-orbit-sidecar",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Orbit telemetry sidecar daemon for Antigravity"
+}

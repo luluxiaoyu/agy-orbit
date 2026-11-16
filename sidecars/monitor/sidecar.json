@@ -1,0 +1,10 @@
+{
+  "command": "node",
+  "args": [
+    "server.mjs"
+  ],
+  "display_name": "Orbit · 遥测守护进程",
+  "description": "实时在输入框底栏挂载圆形上下文额度进度条、Token 速度与缓存命中率",
+  "has_web_ui": false,
+  "restart_policy": "always"
+}
