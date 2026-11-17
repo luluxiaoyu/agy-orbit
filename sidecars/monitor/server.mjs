@@ -311,16 +311,18 @@ async function computeMetrics(convId) {
     let qWkPct = null;
     let qWkReset = '';
 
-    for (const g of quotaGroups) {
-      if (g.displayName?.includes('Gemini') || g.displayName?.includes('Models')) {
-        for (const b of g.buckets || []) {
-          if (b.window === '5h') {
-            q5hPct = +(b.remainingFraction * 100).toFixed(1);
-            q5hReset = formatCountdown(b.resetTime);
-          } else if (b.window === 'weekly') {
-            qWkPct = +(b.remainingFraction * 100).toFixed(1);
-            qWkReset = formatCountdown(b.resetTime);
-          }
+    const targetGroup =
+      quotaGroups.find((g) => g.displayName === 'Gemini Models') ||
+      quotaGroups.find((g) => g.displayName?.includes('Gemini') || g.displayName?.includes('Models'));
+
+    if (targetGroup) {
+      for (const b of targetGroup.buckets || []) {
+        if (b.window === '5h') {
+          q5hPct = +(b.remainingFraction * 100).toFixed(1);
+          q5hReset = formatCountdown(b.resetTime);
+        } else if (b.window === 'weekly') {
+          qWkPct = +(b.remainingFraction * 100).toFixed(1);
+          qWkReset = formatCountdown(b.resetTime);
         }
       }
     }
