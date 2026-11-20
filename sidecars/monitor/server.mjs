@@ -16,22 +16,14 @@ const CONV_DIR = join(homedir(), '.gemini', 'antigravity', 'conversations');
 const sockets = new Map();
 let cachedQuota = null;
 let lastQuotaFetchMs = 0;
-let consecutiveFailures = 0;
-const MAX_FAILURES = 3;
+let lsFailures = 0;
 
-// Clean exit on termination signals or closed parent pipes (Windows & Unix)
+// Clean exit on termination signals
 process.on('SIGTERM', () => process.exit(0));
 process.on('SIGINT', () => process.exit(0));
 if (process.platform !== 'win32') {
   process.on('SIGHUP', () => process.exit(0));
 }
-try {
-  if (process.stdin.isTTY === false) {
-    process.stdin.resume();
-    process.stdin.on('end', () => process.exit(0));
-    process.stdin.on('close', () => process.exit(0));
-  }
-} catch {}
 
 function readCdpPort() {
   try {
@@ -679,7 +671,7 @@ function pageMount(data) {
 }
 
 async function tick() {
-  // 1. Parent process watchdog: if Antigravity parent process exited, terminate immediately
+  // 1. Parent process watchdog: if Antigravity parent process exited, terminate cleanly
   if (process.ppid && process.ppid > 1) {
     try {
       process.kill(process.ppid, 0);
@@ -690,15 +682,33 @@ async function tick() {
     }
   }
 
-  // 2. CDP heartbeat watchdog: if Antigravity renderer closed, exit after consecutive failures
-  const port = readCdpPort();
-  if (!port) {
-    consecutiveFailures++;
-    if (consecutiveFailures >= MAX_FAILURES) {
-      process.exit(0);
+  // 2. Language Server watchdog: if Antigravity host LS is unreachable, client has shut down
+  const lsAddr = process.env.ANTIGRAVITY_LS_ADDRESS;
+  if (lsAddr) {
+    try {
+      const res = await fetch(
+        `http://${lsAddr}/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-codeium-csrf-token': process.env.ANTIGRAVITY_CSRF_TOKEN || '',
+          },
+          body: '{}',
+        }
+      );
+      if (res.ok) lsFailures = 0;
+    } catch {
+      lsFailures++;
+      if (lsFailures >= 3) {
+        process.exit(0);
+      }
     }
-    return;
   }
+
+  // 3. CDP probe: if port is available, inject/update renderer DOM
+  const port = readCdpPort();
+  if (!port) return;
 
   let targets;
   try {
@@ -706,12 +716,7 @@ async function tick() {
       headers: { Host: `localhost:${port}` },
     });
     targets = await res.json();
-    consecutiveFailures = 0;
   } catch {
-    consecutiveFailures++;
-    if (consecutiveFailures >= MAX_FAILURES) {
-      process.exit(0);
-    }
     return;
   }
 
