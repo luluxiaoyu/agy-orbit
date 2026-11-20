@@ -26,15 +26,18 @@ if [ "$(uname -s)" = "Linux" ]; then
             echo "[Orbit] 已自动为 Linux 桌面快捷方式添加 --remote-debugging-port=0 参数！"
         fi
     fi
+elif [ "$(uname -s)" = "Darwin" ]; then
+    if [ -f "$SCRIPT_DIR/scripts/enable-cdp-mac.sh" ]; then
+        sh "$SCRIPT_DIR/scripts/enable-cdp-mac.sh" || true
+    fi
 fi
 
 echo ""
 echo "========================================================"
-echo "[Orbit] 插件文件部署完成！"
+echo "[Orbit] 插件部署完成！"
 echo "1. 请在 Antigravity 的 Plugins 面板中确认启用 \"Orbit · 上下文与配额遥测\""
 if [ "$(uname -s)" = "Darwin" ]; then
-    echo "2. macOS 提示：新版 Antigravity 需要带上 --remote-debugging-port=0 参数启动底栏圆环才会生效："
-    echo "   open -a Antigravity --args --remote-debugging-port=0"
-    echo "   （或者制作 Antigravity-CDP 启动器拖入程序坞，详见 README）"
+    echo "2. macOS 提示：已在「应用程序」或「~/Applications」中为您生成「Antigravity (CDP)」启动应用。"
+    echo "   将其拖入程序坞（Dock），以后直接点击即可一键以 CDP 模式启动，无需每次在终端敲命令！"
 fi
 echo "========================================================"

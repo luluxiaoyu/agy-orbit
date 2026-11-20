@@ -69,14 +69,10 @@ git clone https://github.com/luluxiaoyu/agy-orbit.git ~/.gemini/config/plugins/a
 ```
 
 > **macOS Launch Note**:
-> On macOS, launch Antigravity with the argument once:
-> ```bash
-> open -a Antigravity --args --remote-debugging-port=0
-> ```
-> Or generate a permanent launcher in `/Applications/` and add it to your Dock:
-> ```bash
-> osacompile -o /Applications/Antigravity-CDP.app -e 'do shell script "open -a Antigravity --args --remote-debugging-port=0"'
-> ```
+> On macOS, `install.sh` automatically builds a native **`Antigravity (CDP).app`** launcher in `/Applications` or `~/Applications` (with the official high-res icon and local codesign).
+> Simply **drag `Antigravity (CDP)` to your Dock**, and click it whenever you launch Antigravity — no need to run terminal commands every time!
+> 
+> (You can also run the generator script directly: `sh ~/.gemini/config/plugins/agy-orbit/scripts/enable-cdp-mac.sh`)
 
 ---
 

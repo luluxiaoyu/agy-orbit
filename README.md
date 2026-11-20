@@ -67,14 +67,10 @@ git clone https://github.com/luluxiaoyu/agy-orbit.git ~/.gemini/config/plugins/a
 ```
 
 > **macOS 底栏圆环生效说明**：
-> macOS 首次使用需带上参数启动一次：
-> ```bash
-> open -a Antigravity --args --remote-debugging-port=0
-> ```
-> 建议在终端运行以下命令，在「应用程序」生成一个专用的带参数启动器并拖入程序坞（Dock），以后直接点击它打开即可：
-> ```bash
-> osacompile -o /Applications/Antigravity-CDP.app -e 'do shell script "open -a Antigravity --args --remote-debugging-port=0"'
-> ```
+> macOS 运行 `install.sh` 时会**自动在「应用程序」或「~/Applications」目录中生成原生「Antigravity (CDP)」启动器**（已提取官方高清图标并完成本地签名）。
+> **只需将「Antigravity (CDP)」拖到程序坞（Dock）**，以后直接点击它启动即可，完全不需要每次打开终端敲命令！
+> 
+> （也可以在终端单独运行脚本生成：`sh ~/.gemini/config/plugins/agy-orbit/scripts/enable-cdp-mac.sh`）
 
 ---
 
