@@ -670,6 +670,50 @@ function pageMount(data) {
   return 'mounted v11';
 }
 
+let notifiedCdpMissing = false;
+
+function sendCdpMissingNotification() {
+  if (notifiedCdpMissing) return;
+  notifiedCdpMissing = true;
+
+  const title = 'Orbit · 上下文与配额遥测';
+  const body =
+    process.platform === 'win32'
+      ? '未检测到调试端口，底栏圆环未生效。请运行插件目录下的 scripts\\enable-cdp.ps1 修补快捷方式，或带 --remote-debugging-port=0 重启 Antigravity。'
+      : process.platform === 'darwin'
+        ? '未检测到调试端口，底栏圆环未生效。请完全退出 Antigravity，再带上 --remote-debugging-port=0 参数重新打开。'
+        : '未检测到调试端口，底栏圆环未生效。请带上 --remote-debugging-port=0 参数启动 Antigravity。';
+
+  try {
+    if (process.platform === 'darwin') {
+      const script = 'on run argv\ndisplay notification (item 2 of argv) with title (item 1 of argv)\nend run';
+      import('node:child_process').then(({ execFile }) => {
+        execFile('osascript', ['-e', script, title, body], () => {});
+      }).catch(() => {});
+    } else if (process.platform === 'win32') {
+      const ps = `
+        Add-Type -AssemblyName System.Windows.Forms
+        $n = New-Object System.Windows.Forms.NotifyIcon
+        $n.Icon = [System.Drawing.SystemIcons]::Information
+        $n.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info
+        $n.BalloonTipTitle = '${title}'
+        $n.BalloonTipText = '${body}'
+        $n.Visible = $true
+        $n.ShowBalloonTip(7000)
+        Start-Sleep -Milliseconds 6000
+        $n.Dispose()
+      `;
+      import('node:child_process').then(({ execFile }) => {
+        execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true }, () => {});
+      }).catch(() => {});
+    } else {
+      import('node:child_process').then(({ execFile }) => {
+        execFile('notify-send', [title, body], () => {});
+      }).catch(() => {});
+    }
+  } catch {}
+}
+
 async function tick() {
   // 1. Parent process watchdog: if Antigravity parent process exited, terminate cleanly
   if (process.ppid && process.ppid > 1) {
@@ -708,7 +752,10 @@ async function tick() {
 
   // 3. CDP probe: if port is available, inject/update renderer DOM
   const port = readCdpPort();
-  if (!port) return;
+  if (!port) {
+    sendCdpMissingNotification();
+    return;
+  }
 
   let targets;
   try {
@@ -716,6 +763,7 @@ async function tick() {
       headers: { Host: `localhost:${port}` },
     });
     targets = await res.json();
+    notifiedCdpMissing = false;
   } catch {
     return;
   }

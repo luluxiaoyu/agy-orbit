@@ -18,7 +18,7 @@ A seamless bottom-bar telemetry plugin designed specifically for **Google Antigr
 
 - **Inline Composer Footer Ring**: Mounts seamlessly to the left of the `Auto` button in the composer footer. Displays context percentage with dynamic status colors (green safe, amber warning, red critical).
 - **Click to Toggle / Outside to Close**: Clicking the ring opens/closes the telemetry dashboard. Hover only provides subtle button feedback to prevent accidental popups; clicking outside automatically closes it.
-- **Adaptive Context Window Limit**: While underlying models may theoretically support 1M+ tokens, Antigravity assigns practical safe session limits (e.g. **256k** for Gemini, **160k** for Claude). Orbit dynamically reads the exact limit from Antigravity's native metadata and scales the progress bar proportionally:
+- **Adaptive Context Window Limit**: While underlying models theoretically support larger windows, Antigravity assigns practical safe session limits (e.g. **256k** for Gemini, **160k** for Claude). Orbit dynamically reads the exact limit from Antigravity's native metadata and scales the progress bar proportionally:
   - **Preset (System/Init)**: Amber segment
   - **Read (Tools/Files)**: Blue segment
   - **Think (Chain of Thought)**: Green segment
@@ -32,70 +32,51 @@ A seamless bottom-bar telemetry plugin designed specifically for **Google Antigr
   - **5-Hour Quota**: Remaining fraction %, reset countdown, and dynamic progress bar.
   - **Weekly Quota**: Remaining fraction %, refresh countdown, and dynamic progress bar.
 - **Generation Speed**: Real-time throughput calculation (`~XXX t/s`).
+- **Cross-Platform CDP Watchdog & Native System Notification**: Includes shortcut patch scripts and parameters probe. Shows native OS notification if the debug port is not detected.
 - **Native Dark/Light Theme Support**: Uses Antigravity host CSS variables (`--card`, `--foreground`, `--border`, `--secondary`), providing backdrop blur and zero hardcoded colors.
 - **Zero Emojis & Clean Minimalist Design**: Professional technical vocabulary.
 
 ---
 
-## Installation
+## Installation & Setup
 
-### Method 1: Ask Your Agent to Install (Zero Effort)
+### Method 1: Ask Your Agent to Install (Zero Effort, Cross-Platform)
 
-No need to open a terminal. Simply copy and send the following prompt directly into your **Antigravity chat**, and the agent will install and configure it for you:
+No need to open a terminal. Simply copy and send the following prompt directly into your **Antigravity chat**, and the agent will install the plugin and automatically patch shortcuts on Windows:
 
 ```text
 Please help me install the `agy-orbit` plugin:
 1. Ensure the local plugin directory exists (`~/.gemini/config/plugins/` on macOS/Linux, or `$HOME\.gemini\config\plugins\` on Windows);
 2. Clone `https://github.com/luluxiaoyu/agy-orbit.git` into the `agy-orbit` folder inside that directory (or run `git pull` if it already exists);
-3. Verify that the files (`plugin.json` and `sidecars/monitor/server.mjs`) are present, and remind me to confirm it is enabled in Antigravity Plugins settings.
+3. If on Windows, automatically run `powershell -ExecutionPolicy Bypass -File scripts\enable-cdp.ps1` from the plugin folder to patch desktop and start menu shortcuts with `--remote-debugging-port=0`;
+4. Verify that the files (`plugin.json` and `sidecars/monitor/server.mjs`) are present, and remind me to confirm it is enabled in Antigravity Plugins settings.
 ```
 
 ---
 
-### Method 2: Git Terminal One-Liner
+### Method 2: System One-Click Installers
 
-Run the command in your terminal:
+#### Windows Users
+1. Download this repository and extract it;
+2. Double click **`install.bat`**;
+3. The script automatically installs the plugin into `%USERPROFILE%\.gemini\config\plugins\agy-orbit` and **automatically patches all Antigravity shortcuts on Desktop, Start Menu, and Taskbar** with `--remote-debugging-port=0`;
+4. Quit Antigravity completely, then launch it from your desktop or start menu shortcut!
 
-#### macOS / Linux
+#### macOS / Linux Users
+Run this one-liner in your terminal:
 ```bash
-git clone https://github.com/luluxiaoyu/agy-orbit.git ~/.gemini/config/plugins/agy-orbit
+git clone https://github.com/luluxiaoyu/agy-orbit.git ~/.gemini/config/plugins/agy-orbit && sh ~/.gemini/config/plugins/agy-orbit/install.sh
 ```
 
-#### Windows (PowerShell)
-```powershell
-git clone https://github.com/luluxiaoyu/agy-orbit.git "$HOME\.gemini\config\plugins\agy-orbit"
-```
-
----
-
-### Method 3: Manual Installation
-
-1. Click **Code -> Download ZIP** on GitHub and extract the archive;
-2. Rename the extracted folder to `agy-orbit`;
-3. Move it to your Antigravity plugin directory:
-   - **macOS / Linux**: `~/.gemini/config/plugins/agy-orbit`
-   - **Windows**: `%USERPROFILE%\.gemini\config\plugins\agy-orbit`
-4. Directory structure should look like:
-   ```text
-   ~/.gemini/config/plugins/agy-orbit/
-   ├── plugin.json
-   ├── README.md
-   ├── README.en.md
-   ├── LICENSE
-   └── sidecars/
-       └── monitor/
-           ├── package.json
-           ├── sidecar.json
-           └── server.mjs
-   ```
-
----
-
-## Verification
-
-1. **Auto Hot-Reload**: Antigravity automatically detects the new plugin directory and launches the background daemon. The circular progress ring will appear in the composer footer.
-2. **Check Plugins Menu**: If not visible, open Antigravity's **Plugins** settings and ensure **Orbit · 上下文与配额遥测** is enabled.
-3. **Click Interaction**: Click the ring in the bottom bar to open the telemetry dashboard.
+> **macOS Launch Note**:
+> On macOS, launch Antigravity with the argument once:
+> ```bash
+> open -a Antigravity --args --remote-debugging-port=0
+> ```
+> Or generate a permanent launcher in `/Applications/` and add it to your Dock:
+> ```bash
+> osacompile -o /Applications/Antigravity-CDP.app -e 'do shell script "open -a Antigravity --args --remote-debugging-port=0"'
+> ```
 
 ---
 

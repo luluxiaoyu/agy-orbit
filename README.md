@@ -30,79 +30,68 @@
   - **5 小时限额**：剩余百分比、重置倒计时与专属水平动态进度条
   - **周限额**：本周累计剩余百分比、刷新周期与专属水平动态进度条
 - **生成吞吐速率**：实时测量模型当前生成吐字速度（`~XXX t/s`）。
+- **跨平台 CDP 启动看门狗 & 原生弹窗提醒**：内置快捷方式修补脚本与参数探针；当未检测到调试端口时，自动触发系统级通知提示用户。
 - **原生黑白主题自适应**：全面复用 Antigravity 宿主原生 CSS 变量（`--card`, `--foreground`, `--border`, `--secondary` 等），完美契合浅色与深色模式，毛玻璃质感底色。
 - **无 Emoji 极简技术风格**：纯中文专业术语，界面克制干净。
 
 ---
 
-## 安装方法
+## 安装与配置
 
-### 方法一：复制提示词让 Agent 自动安装（最省心）
+### 方法一：复制提示词让 Agent 全自动安装（最省心，跨平台推荐）
 
-无需手动敲击终端命令，直接将下方预设提示词复制发送给 **Antigravity 对话框**，Agent 会自动为你克隆并配置就绪：
+无需手动敲击终端命令，直接将下方预设提示词复制发送给 **Antigravity 对话框**，Agent 会自动为你克隆插件，并在 Windows 系统下全自动完成快捷方式参数修补：
 
 ```text
 请帮我安装 `agy-orbit` 插件：
 1. 检查并确保本地插件目录存在（macOS/Linux 为 `~/.gemini/config/plugins/`，Windows 为 `$HOME\.gemini\config\plugins\`）；
 2. 运行命令将仓库 `https://github.com/luluxiaoyu/agy-orbit.git` 克隆到该目录下的 `agy-orbit` 文件夹中（若已存在则执行 git pull 更新）；
-3. 检查确认目录结构完整（包含 `plugin.json` 与 `sidecars/monitor/server.mjs`），并提醒我在 Antigravity 插件管理中确认启用。
+3. 如果当前系统是 Windows，自动运行插件目录下的 `powershell -ExecutionPolicy Bypass -File scripts\enable-cdp.ps1`，自动为桌面与开始菜单的 Antigravity 快捷方式加上 `--remote-debugging-port=0` 参数；
+4. 检查确认目录结构完整（包含 `plugin.json` 与 `sidecars/monitor/server.mjs`），并提醒我在 Antigravity 插件管理中确认启用。
 ```
 
 ---
 
-### 方法二：Git 终端一键安装
+### 方法二：各系统一键安装脚本
 
-打开终端，直接将仓库克隆至 Antigravity 插件目录即可：
+#### Windows 用户
+1. 下载本仓库源码包并解压；
+2. 双击运行 **`install.bat`**；
+3. 脚本会自动将插件部署到 `%USERPROFILE%\.gemini\config\plugins\agy-orbit`，并**自动修补桌面、开始菜单和任务栏的 Antigravity 快捷方式**（自动追加 `--remote-debugging-port=0`）；
+4. 完全退出 Antigravity（右下角托盘完全退出），然后重新双击桌面或开始菜单图标打开即可！
 
-#### macOS / Linux
+#### macOS / Linux 用户
+打开终端，运行一键安装：
 ```bash
-git clone https://github.com/luluxiaoyu/agy-orbit.git ~/.gemini/config/plugins/agy-orbit
+git clone https://github.com/luluxiaoyu/agy-orbit.git ~/.gemini/config/plugins/agy-orbit && sh ~/.gemini/config/plugins/agy-orbit/install.sh
 ```
 
-#### Windows (PowerShell)
-```powershell
-git clone https://github.com/luluxiaoyu/agy-orbit.git "$HOME\.gemini\config\plugins\agy-orbit"
-```
+> **macOS 底栏圆环生效说明**：
+> macOS 首次使用需带上参数启动一次：
+> ```bash
+> open -a Antigravity --args --remote-debugging-port=0
+> ```
+> 建议在终端运行以下命令，在「应用程序」生成一个专用的带参数启动器并拖入程序坞（Dock），以后直接点击它打开即可：
+> ```bash
+> osacompile -o /Applications/Antigravity-CDP.app -e 'do shell script "open -a Antigravity --args --remote-debugging-port=0"'
+> ```
 
 ---
 
-### 方法三：手动下载安装
+## 验证与使用
 
-1. 点击本仓库右上角 **Code -> Download ZIP** 下载源码包并解压；
-2. 将解压后的文件夹重命名为 `agy-orbit`；
-3. 移动到对应系统的插件目录下：
-   - **macOS / Linux**: `~/.gemini/config/plugins/agy-orbit`
-   - **Windows**: `%USERPROFILE%\.gemini\config\plugins\agy-orbit`
-4. 确保目录结构如下：
-   ```text
-   ~/.gemini/config/plugins/agy-orbit/
-   ├── plugin.json
-   ├── README.md
-   ├── LICENSE
-   └── sidecars/
-       └── monitor/
-           ├── package.json
-           ├── sidecar.json
-           └── server.mjs
-   ```
-
----
-
-## 启用与验证
-
-1. **自动热加载**：安装完成后，Antigravity 通常会在几秒内自动识别并启动后台守护进程。输入框底栏即刻出现圆环胶囊。
-2. **手动检查**：如未显示，可在 Antigravity 的 **Plugins（插件管理）** 界面中，确保 **Orbit · 上下文与配额遥测** 处于启用（Enabled）状态。
-3. **点击交互**：点击底栏圆环即可展开完整遥测看板；再次点击或点击页面任意空白处即可收起。
+1. **启用插件**：在 Antigravity 的 **Plugins（插件管理）** 界面中，确保 **Orbit · 上下文与配额遥测** 处于启用（Enabled）状态。
+2. **底栏交互**：输入框底栏 `Auto` 按钮左侧即刻显示环形水尺与百分比；点击圆环展开完整遥测看板，再次点击或点击空白处即可收起。
 
 ---
 
 ## 技术原理
 
-1. **Sidecar 守护机制**：通过 Antigravity 规范的后台 Sidecar 进程常驻运行，进程崩溃或客户端重启时自动拉起。
-2. **CDP 动态挂载**：通过 Chrome DevTools Protocol 探针建立 WebSocket 链路，直接对客户端界面注入自愈型 DOM 节点，不修改 Antigravity 任何源码，升级客户端不影响使用。
+1. **CDP 动态挂载机制**：通过 Chrome DevTools Protocol 探针建立 WebSocket 链路，直接对客户端输入框底栏注入自愈型 DOM 节点，不修改 Antigravity 任何源码，升级客户端不影响使用。
+2. **Windows 快捷方式自动化**：通过 `scripts/enable-cdp.ps1` 智能检索 Windows Shell 的 `.lnk` 快捷方式并自动注入参数，为用户省去手动配置启动项的繁琐过程。
 3. **数据源层**：
-   - **上下文动态上限与遥测**：实时流式解析本地 SQLite 元数据与会话日志，动态读取 Antigravity 为当前模型设定的上下文上限（如 256k / 160k），精确计算 Token 分布与生成吞吐速度；
-   - **账户额度**：通过本地通信通道直连官方 LanguageServer RPC 服务读取配额桶，无需任何 API Key。
+   - **上下文与缓存遥测**：实时流式解析本地 SQLite 元数据与会话日志，动态读取 Antigravity 为当前模型设定的上下文上限（如 256k / 160k），精确计算 Token 分布与生成吞吐速度；
+   - **官方配额**：通过本地通信通道直连官方 LanguageServer RPC 服务读取配额桶，无需任何 API Key。
 
 ---
 
